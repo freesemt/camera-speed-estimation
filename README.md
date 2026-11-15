@@ -1,13 +1,40 @@
 # Camera Speed Estimation
 
-An experiment in estimating vehicle speed from a fixed camera. The initial
-prototype generates a **schematic**, physically parameterized road scene and
-then estimates the car's speed from the saved video, without using the
-simulated speed as an input to the estimator.
+Can video from a fixed camera be used to estimate a vehicle's speed? This
+project starts by testing the calculation on a **simulated** road, where the
+car's actual speed is known.
 
-The simulated camera is 5.5 m above the road; the road is 6 m wide. Four
-known road-plane points provide the calibration. The camera height is an
-assumption, not a surveyed installation height.
+![Animation of a blue rectangle representing a car moving along a simulated road viewed from a fixed camera.](assets/simulation-60.gif)
+
+*Synthetic example: a car moving at 60 km/h, viewed from a camera 5.5 m above
+the road. The blue rectangle is a simplified car, not real footage.*
+
+## How it works
+
+```mermaid
+flowchart LR
+    A["Simulate a car<br/>with a known speed"] --> B["Save video"]
+    B --> C["Track the car<br/>across frames"]
+    D["Four known points<br/>on the road"] --> E["Map image positions<br/>to road distances"]
+    C --> E
+    E --> F["Estimate speed<br/>from distance and time"]
+    F --> G["Compare with<br/>the known speed"]
+    A -. "test reference only" .-> G
+```
+
+The estimator reads the video and road-point calibration, **not** the
+simulated speed. The road is 6 m wide; the camera height is an assumption,
+not a surveyed installation height.
+
+### Example results
+
+| Simulated speed | Estimated from video |
+| --- | --- |
+| 40 km/h | 40.05 km/h |
+| 60 km/h | 60.13 km/h |
+
+These are example results under ideal, synthetic conditions, **not evidence
+of real-world accuracy** or reliable identification of speeding vehicles.
 
 ## Setup
 
