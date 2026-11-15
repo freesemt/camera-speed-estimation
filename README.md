@@ -4,10 +4,11 @@ Can video from a fixed camera be used to estimate a vehicle's speed? This
 project starts by testing the calculation on a **simulated** road, where the
 car's actual speed is known.
 
-![Animation of a blue rectangle representing a car moving along a simulated road viewed from a fixed camera.](assets/simulation-60.gif)
+![Animation of a blue rectangle representing a car approaching a fixed camera on the right side of a simulated road.](assets/simulation-60.gif)
 
-*Synthetic example: a car moving at 60 km/h, viewed from a camera 5.5 m above
-the road. The blue rectangle is a simplified car, not real footage.*
+*Synthetic example: a car approaching at 60 km/h on a left-hand-traffic road,
+viewed from a camera 5.5 m above the road. The blue rectangle is a simplified
+car, not real footage.*
 
 ## How it works
 
@@ -30,8 +31,8 @@ not a surveyed installation height.
 
 | Simulated speed | Estimated from video |
 | --- | --- |
-| 40 km/h | 40.05 km/h |
-| 60 km/h | 60.13 km/h |
+| 40 km/h | 40.06 km/h |
+| 60 km/h | 60.15 km/h |
 
 These are example results under ideal, synthetic conditions, **not evidence
 of real-world accuracy** or reliable identification of speeding vehicles.

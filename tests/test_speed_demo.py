@@ -2,10 +2,40 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from speed_demo import estimate_speed, generate_video
+import cv2
+
+from speed_demo import estimate_speed, generate_video, project
 
 
 class SpeedDemoTests(unittest.TestCase):
+    def test_car_approaches_on_the_right_of_the_image(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            video = root / "car.mp4"
+            generate_video(60, video, root / "calibration.json")
+            capture = cv2.VideoCapture(str(video))
+            try:
+                centers = []
+                areas = []
+                for frame_number in (0, 30):
+                    capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+                    ok, frame = capture.read()
+                    self.assertTrue(ok)
+                    mask = cv2.inRange(frame, (120, 0, 0), (255, 120, 120))
+                    moments = cv2.moments(mask, binaryImage=True)
+                    self.assertGreater(moments["m00"], 0)
+                    centers.append((moments["m10"] / moments["m00"], moments["m01"] / moments["m00"]))
+                    areas.append(moments["m00"])
+            finally:
+                capture.release()
+
+            near, far = project([[8, 0], [24, 0]])
+            for x, y in centers:
+                centerline_x = near[0] + (far[0] - near[0]) * (y - near[1]) / (far[1] - near[1])
+                self.assertGreater(x, centerline_x)
+            self.assertGreater(centers[1][1], centers[0][1])
+            self.assertGreater(areas[1], areas[0])
+
     def test_speeds_from_encoded_video(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

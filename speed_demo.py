@@ -59,7 +59,7 @@ def generate_video(speed, video_path, calibration_path):
             polygon(frame, [[0, -0.035], [0, 0.035], [35, 0.035], [35, -0.035]], (190, 190, 190))
             for x in (8, 15.8):
                 polygon(frame, [[x - 0.05, -3], [x - 0.05, 3], [x + 0.05, 3], [x + 0.05, -3]], (235, 235, 235))
-            x = 8 + speed / 3.6 * frame_number / FPS
+            x = 8 + speed / 3.6 * (FPS - frame_number) / FPS
             polygon(frame, [[x - 2, -2.4], [x - 2, -0.6], [x + 2, -0.6], [x + 2, -2.4]], CAR_COLOR)
             writer.write(frame)
     finally:
