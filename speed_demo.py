@@ -39,6 +39,15 @@ def polygon(frame, points, color):
     cv2.fillConvexPoly(frame, vertices, color)
 
 
+def speed_limit_marking():
+    mask = np.zeros((180, 240), dtype=np.uint8)
+    cv2.putText(mask, "40", (20, 150), cv2.FONT_HERSHEY_SIMPLEX, 4.5, 255, 12, cv2.LINE_AA)
+    source = np.float32([[0, 0], [239, 0], [239, 179], [0, 179]])
+    road = project([[8, 2.7], [8, 0.3], [4, 0.3], [4, 2.7]]).astype(np.float32)
+    transform = cv2.getPerspectiveTransform(source, road)
+    return cv2.warpPerspective(mask, transform, (WIDTH, HEIGHT))
+
+
 def generate_video(speed, video_path, calibration_path):
     if not np.isfinite(speed) or not 0 < speed <= 60:
         raise ValueError("Simulation speed must be greater than 0 and at most 60 km/h")
@@ -53,12 +62,14 @@ def generate_video(speed, video_path, calibration_path):
     if not writer.isOpened():
         raise RuntimeError(f"Could not open video for writing: {video_path}")
     try:
+        marking = speed_limit_marking()
         for frame_number in range(FPS + 1):
             frame = np.full((HEIGHT, WIDTH, 3), (92, 116, 88), dtype=np.uint8)
             polygon(frame, [[0, -3], [0, 3], [35, 3], [35, -3]], (64, 64, 64))
             polygon(frame, [[0, -0.035], [0, 0.035], [35, 0.035], [35, -0.035]], (190, 190, 190))
             for x in (8, 15.8):
                 polygon(frame, [[x - 0.05, -3], [x - 0.05, 3], [x + 0.05, 3], [x + 0.05, -3]], (235, 235, 235))
+            frame[marking > 0] = (30, 155, 255)
             x = 8 + speed / 3.6 * (FPS - frame_number) / FPS
             polygon(frame, [[x - 2, -2.4], [x - 2, -0.6], [x + 2, -0.6], [x + 2, -2.4]], CAR_COLOR)
             writer.write(frame)

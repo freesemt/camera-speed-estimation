@@ -3,11 +3,35 @@ import unittest
 from pathlib import Path
 
 import cv2
+import numpy as np
 
-from speed_demo import estimate_speed, generate_video, project
+from speed_demo import ROAD_POINTS, estimate_speed, generate_video, project
 
 
 class SpeedDemoTests(unittest.TestCase):
+    def test_orange_speed_marking_is_on_near_left_lane(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            video = root / "car.mp4"
+            generate_video(60, video, root / "calibration.json")
+            capture = cv2.VideoCapture(str(video))
+            try:
+                ok, frame = capture.read()
+                self.assertTrue(ok)
+            finally:
+                capture.release()
+
+            mask = cv2.inRange(frame, (0, 100, 170), (100, 200, 255))
+            points = cv2.findNonZero(mask)
+            self.assertIsNotNone(points)
+            self.assertGreater(len(points), 100)
+            transform = cv2.getPerspectiveTransform(project(ROAD_POINTS).astype(np.float32), ROAD_POINTS)
+            road_points = cv2.perspectiveTransform(points.astype(np.float32), transform)[:, 0]
+            self.assertGreater(road_points[:, 0].mean(), 4)
+            self.assertLess(road_points[:, 0].mean(), 8)
+            self.assertGreater(road_points[:, 1].mean(), 0)
+            self.assertLess(road_points[:, 1].mean(), 3)
+
     def test_car_approaches_on_the_right_of_the_image(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
