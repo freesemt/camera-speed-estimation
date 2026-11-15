@@ -67,6 +67,25 @@ results. The simulation reports its input speed; the estimator reads only
 the video and calibration. The reported speed is a linear fit to positions
 over time. Video files and the output directory are ignored by Git.
 
+## Use from Python
+
+The repository contains a small Python package: `simulation` generates the
+schematic video and calibration, while `estimation` estimates its speed. From
+the repository directory, the same experiment can be run from Python:
+
+```python
+from camera_speed_estimation import estimate_speed, generate_video
+
+generate_video(60, "output/car-60.mp4", "output/calibration.json")
+speed_kmh, detected_frames, total_frames = estimate_speed(
+    "output/car-60.mp4", "output/calibration.json"
+)
+print(f"{speed_kmh:.2f} km/h ({detected_frames}/{total_frames} frames)")
+```
+
+These are prototype functions for the synthetic example. The package is not
+yet configured for installation or for analyzing real vehicles.
+
 ## Scope and limitations
 
 The car is a flat, blue rectangle on a flat road; its color enables a simple

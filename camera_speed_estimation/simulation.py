@@ -1,0 +1,83 @@
+"""Generate a schematic road video and its calibration."""
+
+import json
+from pathlib import Path
+
+import cv2
+import numpy as np
+
+
+WIDTH, HEIGHT, FPS = 1280, 720, 30
+CAMERA = np.array([-5.0, -7.0, 5.5])
+TARGET = np.array([13.0, 0.0, 0.0])
+FOCAL_LENGTH = 900.0
+ROAD_POINTS = np.array([[8, -3], [8, 3], [24, 3], [24, -3]], dtype=np.float32)
+CAR_COLOR = (220, 55, 35)  # BGR, deliberately distinctive for the toy detector.
+
+
+def project(points):
+    """Project road-plane (x, y) points through a fixed pinhole camera."""
+    forward = TARGET - CAMERA
+    forward /= np.linalg.norm(forward)
+    right = np.cross(forward, [0.0, 0.0, 1.0])
+    right /= np.linalg.norm(right)
+    down = np.cross(forward, right)
+    world = np.column_stack((np.asarray(points, dtype=float), np.zeros(len(points))))
+    vectors = world - CAMERA
+    depth = vectors @ forward
+    if np.any(depth <= 0):
+        raise ValueError("A projected point is behind the camera")
+    return np.column_stack((
+        WIDTH / 2 + FOCAL_LENGTH * (vectors @ right) / depth,
+        HEIGHT / 2 + FOCAL_LENGTH * (vectors @ down) / depth,
+    ))
+
+
+def polygon(frame, points, color):
+    vertices = np.rint(project(points)).astype(np.int32)
+    cv2.fillConvexPoly(frame, vertices, color)
+
+
+def speed_limit_marking():
+    mask = np.zeros((180, 240), dtype=np.uint8)
+    cv2.putText(mask, "40", (20, 150), cv2.FONT_HERSHEY_SIMPLEX, 4.5, 255, 12, cv2.LINE_AA)
+    source = np.float32([[0, 0], [239, 0], [239, 179], [0, 179]])
+    road = project([[8, 2.7], [8, 0.3], [4, 0.3], [4, 2.7]]).astype(np.float32)
+    transform = cv2.getPerspectiveTransform(source, road)
+    return cv2.warpPerspective(mask, transform, (WIDTH, HEIGHT))
+
+
+def generate_video(speed, video_path, calibration_path):
+    """Write a schematic video and calibration for a speed in km/h."""
+    if not np.isfinite(speed) or not 0 < speed <= 60:
+        raise ValueError("Simulation speed must be greater than 0 and at most 60 km/h")
+    video_path = Path(video_path)
+    calibration_path = Path(calibration_path)
+    if video_path.resolve() == calibration_path.resolve():
+        raise ValueError("Video and calibration paths must be different")
+    video_path.parent.mkdir(parents=True, exist_ok=True)
+    calibration_path.parent.mkdir(parents=True, exist_ok=True)
+
+    writer = cv2.VideoWriter(str(video_path), cv2.VideoWriter_fourcc(*"mp4v"), FPS, (WIDTH, HEIGHT))
+    if not writer.isOpened():
+        raise RuntimeError(f"Could not open video for writing: {video_path}")
+    try:
+        marking = speed_limit_marking()
+        for frame_number in range(FPS * 6 // 5 + 1):
+            frame = np.full((HEIGHT, WIDTH, 3), (92, 116, 88), dtype=np.uint8)
+            polygon(frame, [[0, -3], [0, 3], [35, 3], [35, -3]], (64, 64, 64))
+            polygon(frame, [[0, -0.035], [0, 0.035], [35, 0.035], [35, -0.035]], (190, 190, 190))
+            for x in (8, 15.8):
+                polygon(frame, [[x - 0.05, -3], [x - 0.05, 3], [x + 0.05, 3], [x + 0.05, -3]], (235, 235, 235))
+            frame[marking > 0] = (30, 155, 255)
+            x = 8 + speed / 3.6 * (FPS - frame_number) / FPS
+            polygon(frame, [[x - 2, -2.4], [x - 2, -0.6], [x + 2, -0.6], [x + 2, -2.4]], CAR_COLOR)
+            writer.write(frame)
+    finally:
+        writer.release()
+
+    calibration = {
+        "image_points": project(ROAD_POINTS).tolist(),
+        "road_points_m": ROAD_POINTS.tolist(),
+    }
+    calibration_path.write_text(json.dumps(calibration, indent=2) + "\n", encoding="utf-8")

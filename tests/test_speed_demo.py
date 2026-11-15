@@ -5,7 +5,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from speed_demo import ROAD_POINTS, estimate_speed, generate_video, project
+from camera_speed_estimation import estimate_speed, generate_video
+from camera_speed_estimation.simulation import ROAD_POINTS, project
 
 
 class SpeedDemoTests(unittest.TestCase):
