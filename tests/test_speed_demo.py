@@ -41,7 +41,7 @@ class SpeedDemoTests(unittest.TestCase):
             try:
                 centers = []
                 areas = []
-                for frame_number in (0, 30):
+                for frame_number in (0, 36):
                     capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
                     ok, frame = capture.read()
                     self.assertTrue(ok)
@@ -50,6 +50,7 @@ class SpeedDemoTests(unittest.TestCase):
                     self.assertGreater(moments["m00"], 0)
                     centers.append((moments["m10"] / moments["m00"], moments["m01"] / moments["m00"]))
                     areas.append(moments["m00"])
+                    self.assertFalse(mask[0, :].any() or mask[-1, :].any() or mask[:, 0].any() or mask[:, -1].any())
             finally:
                 capture.release()
 
@@ -59,6 +60,9 @@ class SpeedDemoTests(unittest.TestCase):
                 self.assertGreater(x, centerline_x)
             self.assertGreater(centers[1][1], centers[0][1])
             self.assertGreater(areas[1], areas[0])
+            transform = cv2.getPerspectiveTransform(project(ROAD_POINTS).astype(np.float32), ROAD_POINTS)
+            final_position = cv2.perspectiveTransform(np.array([[centers[1]]], dtype=np.float32), transform)
+            self.assertLess(final_position[0, 0, 0], 6)
 
     def test_speeds_from_encoded_video(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -70,7 +74,7 @@ class SpeedDemoTests(unittest.TestCase):
                     generate_video(expected, video, calibration)
                     actual, detected, total = estimate_speed(video, calibration)
                     self.assertEqual(detected, total)
-                    self.assertEqual(total, 31)
+                    self.assertEqual(total, 37)
                     self.assertAlmostEqual(actual, expected, delta=2.0)
 
     def test_rejects_unsupported_speeds(self):

@@ -9,7 +9,7 @@ car's actual speed is known.
 *Synthetic example: a car approaching at 60 km/h on a left-hand-traffic road,
 viewed from a camera 5.5 m above the road. The orange road marking shows an
 illustrative 40 km/h speed limit. The blue rectangle is a simplified car, not
-real footage.*
+real footage. The first and last frames are 1.2 seconds apart.*
 
 ## How it works
 
@@ -33,7 +33,7 @@ not a surveyed installation height.
 | Simulated speed | Estimated from video |
 | --- | --- |
 | 40 km/h | 40.06 km/h |
-| 60 km/h | 60.13 km/h |
+| 60 km/h | 60.12 km/h |
 
 These are example results under ideal, synthetic conditions, **not evidence
 of real-world accuracy** or reliable identification of speeding vehicles.

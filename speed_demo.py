@@ -63,7 +63,7 @@ def generate_video(speed, video_path, calibration_path):
         raise RuntimeError(f"Could not open video for writing: {video_path}")
     try:
         marking = speed_limit_marking()
-        for frame_number in range(FPS + 1):
+        for frame_number in range(FPS * 6 // 5 + 1):
             frame = np.full((HEIGHT, WIDTH, 3), (92, 116, 88), dtype=np.uint8)
             polygon(frame, [[0, -3], [0, 3], [35, 3], [35, -3]], (64, 64, 64))
             polygon(frame, [[0, -0.035], [0, 0.035], [35, 0.035], [35, -0.035]], (190, 190, 190))
